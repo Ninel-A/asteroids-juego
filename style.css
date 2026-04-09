@@ -1,0 +1,83 @@
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  overflow: hidden; 
+  width: 100vw;
+  height: 100vh;
+}
+
+
+#gameCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+
+#barraEstado {
+  position: fixed;
+  top: 16px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px;
+  font-size: 14px;
+  letter-spacing: 2px;
+  pointer-events: none; 
+}
+
+
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.screen h1 {
+  font-size: 48px;
+  letter-spacing: 8px;
+}
+
+.screen p {
+  font-size: 14px;
+  text-align: center;
+  line-height: 2;
+  color: #aaa;
+  letter-spacing: 1px;
+}
+
+.screen button {
+  margin-top: 16px;
+  padding: 10px 32px;
+  background: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.screen button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+
+.hidden {
+  display: none;
+}
