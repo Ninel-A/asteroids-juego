@@ -31,8 +31,12 @@
   </div>
 
   <script>
-    const FPS = 30;
+  const FPS = 30;
   const FRICTION = 0.7; //coeficiente de fricción de la nave
+  const Num_ASTEROIDS = 3;
+  const ASTEROIDS_SPD = 50; //velocidad máxima de los asteroides en píxeles por segundo
+  const ASTEROIDS_VERT = 10; // número máximo de vértices de los asteroides
+  const ASTEROIDS_SIZE = 100; //tamaño inicial de los asteroides
   const SHIP_SIZE = 30;
   const SHIP_THRUST = 5; //aceleración 
   const TURN_SPEED = 360; 
@@ -57,7 +61,12 @@
     }
   };
 
+  // asteroides 
+  var asteroids = [];
+  createAsteroidBelt();
+
   var gameRunning = false;
+  var lives = 3;
 
   
   document.getElementById("btn-start").addEventListener("click", function () {
@@ -71,19 +80,33 @@
 
   setInterval(update, 1000 / FPS);
 
+  function createAsteroidBelt() {
+    asteroids = [];
+    var x, y;
+    for (var i = 0; i < Num_ASTEROIDS; i++) {
+      do {
+      x = Math.floor (Math.random() * canv.width);
+      y = Math.floor (Math.random() * canv.height);
+      } while (distanceBetweenPoints(ship.x, ship.y, x, y) < ASTEROIDS_SIZE * 2 + ship.r);
+      asteroids.push (newAsteroid(x, y));
+    }
+  }
 
+  function distanceBetweenPoints(x1, y1, x2, y2) {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  }
   
 
   function keyDown (/** @type {KeyboardEvent} */ ev ) {
     switch (ev.keyCode) {
       case 37: //rotar a la izquierda
-        ship.rot = TURN_SPEED / 180 * Math.PI / FPS;
+        ship.rot = -TURN_SPEED / 180 * Math.PI / FPS;
         break;
       case 38: //  thrusting
         ship.thrusting = true;
         break;
       case 39: //rotar a la derecha 
-        ship.rot = -TURN_SPEED / 180 * Math.PI / FPS;
+        ship.rot = +TURN_SPEED / 180 * Math.PI / FPS;
         break;
     }
   }
@@ -102,6 +125,45 @@
         break;
     }
   }
+
+  function newAsteroid(x, y) {
+    var asteroid = {
+      x: x,
+      y: y,
+      xv: Math.random() * ASTEROIDS_SPD/ FPS * (Math.random() < 0.5 ? 1 : -1), // velocidad aleatoria
+      yv: Math.random() * ASTEROIDS_SPD/ FPS * (Math.random() < 0.5 ? 1 : -1), // velocidad aleatoria
+      r: ASTEROIDS_SIZE / 2,
+      a: Math.random() * Math.PI * 2, // dirección aleatoria
+      vert: Math.floor(Math.random() * (ASTEROIDS_VERT +1) + ASTEROIDS_VERT / 2 ), // número de vértices aleatorio
+      rot: (Math.random() - 0.5) * 0.02, // velocidad de rotación aleatoria
+      speed: Math.random() * 1.5 + 0.5, // velocidad aleatoria
+      velX: 0,
+      velY: 0
+    };
+
+    // calcular la velocidad en función de la dirección y la velocidad
+    asteroid.velX = ASTEROIDS_SPD * Math.cos(asteroid.a);
+    asteroid.velY = ASTEROIDS_SPD * Math.sin(asteroid.a);
+
+    return asteroid;
+  }
+
+
+  function checkCollisions() {
+  for (var i = 0; i < asteroids.length; i++) {
+    if (distanceBetweenPoints(ship.x, ship.y, asteroids[i].x, asteroids[i].y) < ship.r + asteroids[i].r) {
+      lives--;
+      document.getElementById("lives").textContent = "VIDAS: " + lives;
+      
+      // regresar la nave al centro
+      ship.x = canv.width / 2;
+      ship.y = canv.height / 2;
+      ship.thrust.x = 0;
+      ship.thrust.y = 0;
+    }
+  }
+}
+
 
   function update() {
     if (!gameRunning) return;
@@ -159,6 +221,54 @@
     ctx.closePath();
     ctx.stroke();
 
+    //Dibujar asteroides
+    ctx.strokeStyle = "slategrey";
+    ctx.lineWidth = SHIP_SIZE / 20;
+    var x, y, r, a, vert; 
+    for (var i = 0; i < asteroids.length; i++) {
+
+      //get propiedades
+      x = asteroids[i].x;
+      y = asteroids[i].y;
+      r = asteroids[i].r;
+      a = asteroids[i].a;
+      vert = asteroids[i].vert;
+      
+      ctx.beginPath();
+      ctx.moveTo(
+        x + r * Math.cos(a),
+        y + r * Math.sin(a) 
+      );
+
+      // dibujar poligono
+      for (var j = 1; j < vert; j++) {
+        ctx.lineTo(
+          x + r * Math.cos(a + j * Math.PI * 2 / vert),
+          y + r * Math.sin(a + j * Math.PI * 2 / vert)
+        );
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      //mover asteroides
+      // ✅ debe ser así
+asteroids[i].x += asteroids[i].velX / FPS;
+asteroids[i].y += asteroids[i].velY / FPS;
+
+      //borde de pantalla para asteroides
+      if (asteroids[i].x < 0 - asteroids[i].r) {
+       asteroids[i].x = canv.width + asteroids[i].r;
+      } else if (asteroids[i].x > canv.width + asteroids[i].r) {
+       asteroids[i].x = 0 - asteroids[i].r;
+      }
+      if (asteroids[i].y < 0 - asteroids[i].r) {
+       asteroids[i].y = canv.height + asteroids[i].r;
+      } else if (asteroids[i].y > canv.height + asteroids[i].r) {
+       asteroids[i].y = 0 - asteroids[i].r;
+    }
+     
+    }
+
 
     //ROTAR
     ship. a += ship.rot;
@@ -179,6 +289,10 @@
       ship.y = 0 - ship.r;
     }
 
+    // colisiones
+    checkCollisions();
+
+    
     //punto central
     ctx.fillStyle = "red";
     ctx.fillRect(ship.x - 1, ship.y - 1, 2, 2);
