@@ -33,6 +33,9 @@
   <script>
   const FPS = 30;
   const FRICTION = 0.7; //coeficiente de fricción de la nave
+  const LASER_MAX = 10; // número máximo de lasers en pantalla
+  const LASER_SPD = 500; // velocidad de los lasers en píxeles por segundo
+  const ASTEROIDS_JAG = 0.5; //probabilidad de que un asteroide se divida al ser destruido
   const Num_ASTEROIDS = 3;
   const ASTEROIDS_SPD = 50; //velocidad máxima de los asteroides en píxeles por segundo
   const ASTEROIDS_VERT = 10; // número máximo de vértices de los asteroides
@@ -52,6 +55,8 @@
     x: canv.width / 2,
     y: canv.height / 2,
     r: SHIP_SIZE / 2,
+    canShoot: true,
+    lasers: [],
     a: 90 / 180 * Math.PI,
     rot: 0,
     thrusting: false,
@@ -80,6 +85,18 @@
 
   setInterval(update, 1000 / FPS);
 
+  function shootLaser() {
+    if (ship.canShoot && ship.lasers.length < LASER_MAX) {
+      ship.lasers.push({
+        x: ship.x + 4 / 3 * ship.r * Math.cos(ship.a),
+        y: ship.y - 4 / 3 * ship.r * Math.sin(ship.a),
+        xv: LASER_SPD * Math.cos(ship.a) / FPS,
+        yv: -LASER_SPD * Math.sin(ship.a) / FPS
+      });
+    }
+    ship.canShoot = false;
+  }
+
   function createAsteroidBelt() {
     asteroids = [];
     var x, y;
@@ -99,6 +116,9 @@
 
   function keyDown (/** @type {KeyboardEvent} */ ev ) {
     switch (ev.keyCode) {
+      case 32: //disparar
+        shootLaser ();
+        break;
       case 37: //rotar a la izquierda
         ship.rot = -TURN_SPEED / 180 * Math.PI / FPS;
         break;
@@ -114,6 +134,9 @@
 
   function keyUp (/** @type {KeyboardEvent} */ ev ) {
     switch (ev.keyCode) {
+      case 32: //disparar otra vez
+        ship.canShoot = true;
+        break;
       case 37: //parar rotación a la izquierda
         ship.rot = 0;
         break;
@@ -136,11 +159,14 @@
       a: Math.random() * Math.PI * 2, // dirección aleatoria
       vert: Math.floor(Math.random() * (ASTEROIDS_VERT +1) + ASTEROIDS_VERT / 2 ), // número de vértices aleatorio
       rot: (Math.random() - 0.5) * 0.02, // velocidad de rotación aleatoria
+      offs: [],
       speed: Math.random() * 1.5 + 0.5, // velocidad aleatoria
       velX: 0,
       velY: 0
     };
-
+    for (var i = 0; i < asteroid.vert; i++) {
+      asteroid.offs.push(Math.random() * ASTEROIDS_JAG * 2 + 1 - ASTEROIDS_JAG);
+    } 
     // calcular la velocidad en función de la dirección y la velocidad
     asteroid.velX = ASTEROIDS_SPD * Math.cos(asteroid.a);
     asteroid.velY = ASTEROIDS_SPD * Math.sin(asteroid.a);
@@ -221,10 +247,27 @@
     ctx.closePath();
     ctx.stroke();
 
+    //dibujar los lasers
+    for (var i = 0; i < ship.lasers.length; i++) {
+      ctx.fillStyle = "salmon";
+      ctx.beginPath();
+      ctx.arc(ship.lasers[i].x, ship.lasers[i].y, SHIP_SIZE / 15, 0, Math.PI * 2, false);
+      ctx.fill();
+
+      //mover lasers
+      ship.lasers[i].x += ship.lasers[i].xv;
+      ship.lasers[i].y += ship.lasers[i].yv;
+
+      // eliminar lasers que salen de la pantalla
+      if (ship.lasers[i].x < 0 || ship.lasers[i].x > canv.width || ship.lasers[i].y < 0 || ship.lasers[i].y > canv.height) {
+        ship.lasers.splice(i, 1);
+        i--;
+      }
+    }
     //Dibujar asteroides
     ctx.strokeStyle = "slategrey";
     ctx.lineWidth = SHIP_SIZE / 20;
-    var x, y, r, a, vert; 
+    var x, y, r, a, vert, offs; 
     for (var i = 0; i < asteroids.length; i++) {
 
       //get propiedades
@@ -233,25 +276,26 @@
       r = asteroids[i].r;
       a = asteroids[i].a;
       vert = asteroids[i].vert;
+      offs = asteroids[i].offs;
       
       ctx.beginPath();
       ctx.moveTo(
-        x + r * Math.cos(a),
-        y + r * Math.sin(a) 
+        x + r * offs [0] * Math.cos(a),
+        y + r * offs [0] * Math.sin(a) 
       );
 
       // dibujar poligono
       for (var j = 1; j < vert; j++) {
         ctx.lineTo(
-          x + r * Math.cos(a + j * Math.PI * 2 / vert),
-          y + r * Math.sin(a + j * Math.PI * 2 / vert)
+          x + r * offs[j] * Math.cos(a + j * Math.PI * 2 / vert),
+          y + r * offs[j] * Math.sin(a + j * Math.PI * 2 / vert)
         );
       }
       ctx.closePath();
       ctx.stroke();
 
       //mover asteroides
-      // ✅ debe ser así
+      
 asteroids[i].x += asteroids[i].velX / FPS;
 asteroids[i].y += asteroids[i].velY / FPS;
 
