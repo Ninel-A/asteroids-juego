@@ -36,11 +36,12 @@
   const LASER_MAX = 10; // número máximo de lasers en pantalla
   const LASER_SPD = 500; // velocidad de los lasers en píxeles por segundo
   const ASTEROIDS_JAG = 0.5; //probabilidad de que un asteroide se divida al ser destruido
-  const Num_ASTEROIDS = 3;
+  const Num_ASTEROIDS = 5;
   const ASTEROIDS_SPD = 50; //velocidad máxima de los asteroides en píxeles por segundo
   const ASTEROIDS_VERT = 10; // número máximo de vértices de los asteroides
   const ASTEROIDS_SIZE = 100; //tamaño inicial de los asteroides
   const SHIP_SIZE = 30;
+  const SHOW_BOUNDING = true; //mostrar colisiones
   const SHIP_THRUST = 5; //aceleración 
   const TURN_SPEED = 360; 
 
@@ -264,11 +265,21 @@
         i--;
       }
     }
+
+
+    if (SHOW_BOUNDING){
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(ship.x, ship.y, ship.r, 0, Math.PI * 2, false);
+      ctx.stroke();
+    }
     //Dibujar asteroides
-    ctx.strokeStyle = "slategrey";
-    ctx.lineWidth = SHIP_SIZE / 20;
+    
     var x, y, r, a, vert, offs; 
     for (var i = 0; i < asteroids.length; i++) {
+      ctx.strokeStyle = "slategrey";
+      ctx.lineWidth = SHIP_SIZE / 20;
 
       //get propiedades
       x = asteroids[i].x;
@@ -293,6 +304,15 @@
       }
       ctx.closePath();
       ctx.stroke();
+
+
+       if (SHOW_BOUNDING){
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2, false);
+      ctx.stroke();
+    }
 
       //mover asteroides
       
