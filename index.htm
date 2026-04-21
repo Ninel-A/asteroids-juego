@@ -54,21 +54,7 @@
   canv.width = window.innerWidth;
   canv.height = window.innerHeight;
 
-  var ship = {
-    x: canv.width / 2,
-    y: canv.height / 2,
-    r: SHIP_SIZE / 2,
-    canShoot: true,
-    lasers: [],
-    a: 90 / 180 * Math.PI,
-    explodeTime: 0,
-    rot: 0,
-    thrusting: false,
-    thrust : {
-      x: 0,
-      y: 0  
-    }
-  };
+  var ship = newShip();
 
   // asteroides 
   var asteroids = [];
@@ -226,7 +212,24 @@
     }
   }
 }
-
+  function newShip() {
+    return {
+    x: canv.width / 2,
+    y: canv.height / 2,
+    r: SHIP_SIZE / 2,
+    canShoot: true,
+    lasers: [],
+    a: 90 / 180 * Math.PI,
+    explodeTime: 0,
+    rot: 0,
+    thrusting: false,
+    thrust : {
+      x: 0,
+      y: 0  
+    }
+  };
+     }
+  
 
   function update() {
     var exploding = ship.explodeTime > 0;
@@ -390,12 +393,8 @@
       }
     }
 
-    // rotar
-    ship.a += ship.rot;
+  
 
-    // mover nave
-    ship.x += ship.thrust.x;
-    ship.y += ship.thrust.y;
 
     // bordes de la pantalla
     if (ship.x < 0 - ship.r) {
@@ -432,6 +431,25 @@
         if (distanceBetweenPoints(ship.x, ship.y, asteroids[i].x, asteroids[i].y) < ship.r + asteroids[i].r) {
           explodeShip();
           break;
+        }
+      }
+
+      // rotar
+    ship.a += ship.rot;
+
+    // mover nave
+    ship.x += ship.thrust.x;
+    ship.y += ship.thrust.y;
+
+    } else {
+      ship.explodeTime--;
+
+      if (ship.explodeTime == 0) {
+        ship = newShip();
+        if (lives == 0) {
+          gameRunning = false;
+          document.getElementById("final-score").textContent = "Puntos: " + document.getElementById("score").textContent.split(": ")[1];
+          document.getElementById("screen-gameover").classList.remove("hidden");
         }
       }
     }
