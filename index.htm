@@ -34,6 +34,7 @@
   const FPS = 30;
   const FRICTION = 0.7; //coeficiente de fricción de la nave
   const LASER_DIST = 0.6; //distancia que recorre el laser antes de desaparecer
+  const LASER_EXPLODE_DUR = 0.1; //duración de la explosión del laser en segundos
   const LASER_MAX = 10; // número máximo de lasers en pantalla
   const LASER_SPD = 500; // velocidad de los lasers en píxeles por segundo
   const ASTEROIDS_JAG = 0.5; //probabilidad de que un asteroide se divida al ser destruido
@@ -42,7 +43,9 @@
   const ASTEROIDS_VERT = 10; // número máximo de vértices de los asteroides
   const ASTEROIDS_SIZE = 100; //tamaño inicial de los asteroides
   const SHIP_SIZE = 30;
+  const SHIP_BLINK_DUR = 0.1; //duración de cada parpadeo de la nave en segundos
   const SHIP_EXPLODE_DUR = 0.3; //duración de la explosión de la nave en segundos
+  const SHIP_INV_DUR = 1.5; //duración de la invulnerabilidad de la nave después de explotar en segundos  
   const SHOW_BOUNDING = false; //mostrar colisiones
   const SHIP_THRUST = 5; //aceleración 
   const TURN_SPEED = 360; 
@@ -82,7 +85,8 @@
         y: ship.y - 4 / 3 * ship.r * Math.sin(ship.a),
         xv: LASER_SPD * Math.cos(ship.a) / FPS,
         yv: -LASER_SPD * Math.sin(ship.a) / FPS,
-        dist: 0
+        dist: 0,
+        explodeTime: 0
       });
     }
     ship.canShoot = false;
@@ -193,9 +197,7 @@
     return asteroid;
   }
 
-  function destroyAsteroid(index) {
-  asteroids.splice(index, 1);
-  }
+  
 
 
   function checkCollisions() {
@@ -220,6 +222,9 @@
     canShoot: true,
     lasers: [],
     a: 90 / 180 * Math.PI,
+    blinkNum: Math.ceil(SHIP_INV_DUR / SHIP_BLINK_DUR),
+    blinkTime: Math.ceil(SHIP_BLINK_DUR * FPS), 
+
     explodeTime: 0,
     rot: 0,
     thrusting: false,
@@ -232,18 +237,19 @@
   
 
   function update() {
+    var blinkOn = ship.blinkNum == 0 || ship.blinkNum % 2 != 0;
     var exploding = ship.explodeTime > 0;
     if (!gameRunning) return;
 
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canv.width, canv.height);
 
-    // thrust
+    // thrust - potencia
     if (ship.thrusting) {
       ship.thrust.x += SHIP_THRUST * Math.cos(ship.a) / FPS;
       ship.thrust.y -= SHIP_THRUST * Math.sin(ship.a) / FPS;
 
-      if (!exploding) {
+      if (!exploding && blinkOn) {
         ctx.fillStyle = "yellow";
         ctx.strokeStyle = "orange";
         ctx.lineWidth = SHIP_SIZE / 10;
@@ -271,7 +277,12 @@
     }
 
     if (!exploding) {
-      ctx.strokeStyle = "white";
+      if (blinkOn) {
+        ctx.fillStyle = "white";
+      } else {
+        ctx.fillStyle = "transparent";
+      }
+      ctx.strokeStyle = blinkOn ? "white" : "transparent";
       ctx.lineWidth = SHIP_SIZE / 20;
       ctx.beginPath();
       ctx.moveTo(
@@ -288,6 +299,15 @@
       );
       ctx.closePath();
       ctx.stroke();
+
+      if (ship.blinkNum > 0) {
+        ship.blinkTime--;
+        if (ship.blinkTime == 0) {
+          ship.blinkTime = Math.ceil(SHIP_BLINK_DUR * FPS);
+          ship.blinkNum--;
+        }
+      }
+    
     } else {
       ctx.fillStyle = "darkred";
       ctx.beginPath();
@@ -309,11 +329,28 @@
 
     // dibujar los lasers
     for (var i = 0; i < ship.lasers.length; i++) {
-      ctx.fillStyle = "purple";
-      ctx.beginPath();
-      ctx.arc(ship.lasers[i].x, ship.lasers[i].y, SHIP_SIZE / 15, 0, Math.PI * 2, false);
-      ctx.fill();
+      if (ship.lasers[i].explodeTime == 0) {
+        ctx.fillStyle = "purple";
+        ctx.beginPath();
+        ctx.arc(ship.lasers[i].x, ship.lasers[i].y, SHIP_SIZE / 15, 0, Math.PI * 2, false);
+        ctx.fill();
 
+      }else {
+        //dibujar explosión del laser
+        ctx.fillStyle = "orange";
+        ctx.beginPath();
+        ctx.arc(ship.lasers[i].x, ship.lasers[i].y, ship.r * 0.75, 0, Math.PI * 2, false);
+        ctx.fill();
+         ctx.fillStyle = "purple";
+        ctx.beginPath();
+        ctx.arc(ship.lasers[i].x, ship.lasers[i].y, ship.r * 0.5, 0, Math.PI * 2, false);
+        ctx.fill();
+         ctx.fillStyle = "pink";
+        ctx.beginPath();
+        ctx.arc(ship.lasers[i].x, ship.lasers[i].y, ship.r * 0.25, 0, Math.PI * 2, false);
+        ctx.fill();
+      }
+      
       var ax, ay, ar, lx, ly;
       var laserHit = false;
       for (var j = 0; j < asteroids.length; j++) {
@@ -323,9 +360,9 @@
         lx = ship.lasers[i].x;
         ly = ship.lasers[i].y;
 
-        if (distanceBetweenPoints(ax, ay, lx, ly) < ar) {
+        if (ship.lasers[i].explodeTime == 0 && distanceBetweenPoints(ax, ay, lx, ly) < ar) {
           destroyAsteroid(j);
-          ship.lasers.splice(i, 1);
+          ship.lasers[i].explodeTime = Math.ceil(LASER_EXPLODE_DUR * FPS);
           i--;
           laserHit = true;
           break;
@@ -339,6 +376,17 @@
         continue;
       }
 
+      //explosuón del laser
+      if (ship.lasers[i].explodeTime > 0) {
+        ship.lasers[i].explodeTime--;
+
+        //destrozar laser depués de la explosión
+        if (ship.lasers[i].explodeTime == 0) {
+          ship.lasers.splice(i, 1);
+          i--;
+          continue;
+        }
+      } else {
       ship.lasers[i].x += ship.lasers[i].xv;
       ship.lasers[i].y += ship.lasers[i].yv;
       ship.lasers[i].dist += Math.sqrt(Math.pow(ship.lasers[i].xv, 2) + Math.pow(ship.lasers[i].yv, 2));
@@ -348,6 +396,7 @@
         i--;
       }
     }
+  }
 
     if (SHOW_BOUNDING) {
       ctx.strokeStyle = "lime";
@@ -426,24 +475,24 @@
     }
 
     // colisiones nave-asteroide
-    if (!exploding) {
+    if (!exploding && ship.blinkNum == 0) {
       for (var i = 0; i < asteroids.length; i++) {
         if (distanceBetweenPoints(ship.x, ship.y, asteroids[i].x, asteroids[i].y) < ship.r + asteroids[i].r) {
           explodeShip();
+          destroyAsteroid(i);
           break;
         }
       }
+    }
 
-      // rotar
+    // rotar y mover nave (siempre, no solo cuando no explota)
     ship.a += ship.rot;
-
-    // mover nave
     ship.x += ship.thrust.x;
     ship.y += ship.thrust.y;
 
-    } else {
+    // countdown explosión
+    if (exploding) {
       ship.explodeTime--;
-
       if (ship.explodeTime == 0) {
         ship = newShip();
         if (lives == 0) {
