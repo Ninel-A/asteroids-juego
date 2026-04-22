@@ -39,6 +39,9 @@
   const LASER_MAX = 10; // número máximo de lasers en pantalla
   const LASER_SPD = 500; // velocidad de los lasers en píxeles por segundo
   const ASTEROIDS_JAG = 0.5; //probabilidad de que un asteroide se divida al ser destruido
+  const ROID_PTS_LGE = 20; //puntos por destruir un asteroide grande
+  const ROID_PTS_MED = 30; //puntos por destruir un astero  
+  const ROID_PTS_SML = 50; //puntos por destruir un asteroide pequeño
   const Num_ASTEROIDS = 2;
   const ASTEROIDS_SPD = 50; //velocidad máxima de los asteroides en píxeles por segundo
   const ASTEROIDS_VERT = 10; // número máximo de vértices de los asteroides
@@ -52,6 +55,7 @@
   const TURN_SPEED = 360; 
   const TEXT_FADE_TIME = 2; //duración de la aparición del texto en segundos
   const TEXT_SIZE = 40; //tamaño del texto
+  const SAVE_KEY_SCORE = "asteroidsRecord"; //clave para guardar el record en localStorage
 
   var canv = document.getElementById("gameCanvas");
   var ctx = canv.getContext("2d");
@@ -124,10 +128,15 @@
     if (r == Math.ceil( ASTEROIDS_SIZE / 2)) {
       asteroids.push(newAsteroid(x, y, Math.ceil(ASTEROIDS_SIZE / 4)));
       asteroids.push(newAsteroid(x, y, Math.ceil(ASTEROIDS_SIZE / 4)));
+      score += ROID_PTS_LGE;
     } else if (r == Math.ceil( ASTEROIDS_SIZE / 4)) {
       asteroids.push(newAsteroid(x, y, Math.ceil(ASTEROIDS_SIZE / 8)));
       asteroids.push(newAsteroid(x, y, Math.ceil(ASTEROIDS_SIZE / 8)));
+      score += ROID_PTS_MED;
+    } else {
+      score += ROID_PTS_SML;
     }
+    document.getElementById("score").textContent = "PUNTOS: " + score;
 
     // eliminar el asteroide original
     asteroids.splice(index, 1);
@@ -233,11 +242,17 @@
   }
 }
 
-function newGame(){
+function newGame() {
   level = 0;
+  score = 0;
   ship = newShip();
+  // guardar record si no existe
+  if (localStorage.getItem(SAVE_KEY_SCORE) === null) {
+    localStorage.setItem(SAVE_KEY_SCORE, 0);
+  }
   newLevel();
 }
+
 
 function newLevel(){
   text = "Nivel " + (level + 1);
@@ -381,14 +396,8 @@ function newLevel(){
         ctx.fill();
       }
       
-      if (textAlfa >= 0){
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = "rgba(255, 255, 255, " + textAlfa + ")";
-        ctx.font = "small-caps " + TEXT_SIZE + "px dejavu sans mono";
-        ctx.fillText (text, canv.width / 2, canv.height * 0.75);
-        textAlfa -= 1.0 / TEXT_FADE_TIME / FPS;
-      }
+      
+
       var ax, ay, ar, lx, ly;
       var laserHit = false;
       for (var j = 0; j < asteroids.length; j++) {
@@ -435,6 +444,23 @@ function newLevel(){
       }
     }
   }
+  // texto nivel
+    if (textAlfa >= 0) {
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(255, 255, 255, " + textAlfa + ")";
+      ctx.font = "small-caps " + TEXT_SIZE + "px dejavu sans mono";
+      ctx.fillText(text, canv.width / 2, canv.height * 0.75);
+      textAlfa -= 1.0 / TEXT_FADE_TIME / FPS;
+    }
+
+    // record
+     ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "white";
+    ctx.font = (TEXT_SIZE * 0.4) + "px dejavu sans mono";
+    ctx.fillText("Record: " + (localStorage.getItem(SAVE_KEY_SCORE) || 0), canv.width / 2, 16);
+
 
     if (SHOW_BOUNDING) {
       ctx.strokeStyle = "lime";
@@ -534,13 +560,16 @@ function newLevel(){
       if (ship.explodeTime == 0) {
         ship = newShip();
         if (lives == 0) {
+          // guardar record
+          if (score > parseInt(localStorage.getItem(SAVE_KEY_SCORE))) {
+            localStorage.setItem(SAVE_KEY_SCORE, score);
+          }
           gameRunning = false;
-          document.getElementById("final-score").textContent = "Puntos: " + document.getElementById("score").textContent.split(": ")[1];
+          document.getElementById("final-score").textContent = "Puntos: " + score;
           document.getElementById("screen-gameover").classList.remove("hidden");
         }
       }
     }
-
     // punto central
     ctx.fillStyle = "red";
     ctx.fillRect(ship.x - 1, ship.y - 1, 2, 2);
