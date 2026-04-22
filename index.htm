@@ -1,33 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juego-Asteroids 1.0</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <canvas id="gameCanvas"></canvas>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Juego-Asteroids 1.0</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas>
 
-  <div id="barraEstado">
-    <span id="score">PUNTOS: 0</span>
-    <span id="lives">VIDAS: 3</span>
-  </div>
+    <div id="barraEstado">
+      <span id="score">PUNTOS: 0</span>
+      <span id="lives">VIDAS: 3</span>
+    </div>
 
-  <div id="screen-menu" class="screen">
-    <h1>ASTEROIDS</h1>
-    <p>Usa las flechas para moverte<br>ESPACIO para disparar</p>
-    <button id="btn-start">JUGAR</button>
-  </div>
+    <div id="screen-menu" class="screen">
+      <h1>ASTEROIDS</h1>
+      <p>Usa las flechas para moverte<br />ESPACIO para disparar</p>
+      <button id="btn-start">JUGAR</button>
+    </div>
 
-  <div id="screen-gameover" class="screen hidden">
-    <h1>GAME OVER</h1>
-    <p id="final-score">Puntos: 0</p>
-    <button id="btn-restart">REINTENTAR</button>
-  </div>
+    <div id="screen-gameover" class="screen hidden">
+      <h1>GAME OVER</h1>
+      <p id="final-score">Puntos: 0</p>
+      <button id="btn-restart">REINTENTAR</button>
+    </div>
 
-  <script src="js/model.js"></script>
-  <script src="js/view.js"></script>
-  <script src="js/controller.js"></script>
-</body>
+    <script src="js/model.js"></script>
+    <script src="js/view.js"></script>
+    <script src="js/controller.js"></script>
+  </body>
 </html>
