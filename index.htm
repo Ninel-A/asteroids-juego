@@ -21,6 +21,7 @@
     <h1>ASTEROIDS</h1>
     <p>Usa las flechas para moverte<br>ESPACIO para disparar</p>
     <button id="btn-start">JUGAR</button>
+    
   </div>
 
   <!-- Pantalla de game over -->
@@ -38,7 +39,7 @@
   const LASER_MAX = 10; // número máximo de lasers en pantalla
   const LASER_SPD = 500; // velocidad de los lasers en píxeles por segundo
   const ASTEROIDS_JAG = 0.5; //probabilidad de que un asteroide se divida al ser destruido
-  const Num_ASTEROIDS = 5;
+  const Num_ASTEROIDS = 2;
   const ASTEROIDS_SPD = 50; //velocidad máxima de los asteroides en píxeles por segundo
   const ASTEROIDS_VERT = 10; // número máximo de vértices de los asteroides
   const ASTEROIDS_SIZE = 100; //tamaño inicial de los asteroides
@@ -49,6 +50,8 @@
   const SHOW_BOUNDING = false; //mostrar colisiones
   const SHIP_THRUST = 5; //aceleración 
   const TURN_SPEED = 360; 
+  const TEXT_FADE_TIME = 2; //duración de la aparición del texto en segundos
+  const TEXT_SIZE = 40; //tamaño del texto
 
   var canv = document.getElementById("gameCanvas");
   var ctx = canv.getContext("2d");
@@ -57,11 +60,11 @@
   canv.width = window.innerWidth;
   canv.height = window.innerHeight;
 
-  var ship = newShip();
+  //parametros
+  var level, asteroids, ship, text, textAlfa ;
+  newGame();
 
-  // asteroides 
-  var asteroids = [];
-  createAsteroidBelt();
+  
 
   var gameRunning = false;
   var lives = 3;
@@ -72,6 +75,14 @@
     gameRunning = true;
   });
 
+  document.getElementById("btn-restart").addEventListener("click", function () {
+  lives = 3;
+  document.getElementById("lives").textContent = "VIDAS: 3";
+  document.getElementById("score").textContent = "PUNTOS: 0";
+  document.getElementById("screen-gameover").classList.add("hidden");
+  newGame();
+  gameRunning = true;
+});
 
   document.addEventListener("keydown", keyDown) ;
   document.addEventListener("keyup", keyUp );
@@ -95,7 +106,7 @@
   function createAsteroidBelt() {
     asteroids = [];
     var x, y;
-    for (var i = 0; i < Num_ASTEROIDS; i++) {
+    for (var i = 0; i < Num_ASTEROIDS + level; i++) {
       do {
       x = Math.floor (Math.random() * canv.width);
       y = Math.floor (Math.random() * canv.height);
@@ -120,6 +131,12 @@
 
     // eliminar el asteroide original
     asteroids.splice(index, 1);
+
+    //nuevo nivel cuando no hay asteroides
+    if (asteroids.length == 0) {
+      level++;
+      newLevel();
+    }
   }
 
   function distanceBetweenPoints(x1, y1, x2, y2) {
@@ -173,11 +190,12 @@
   }
 
   function newAsteroid(x, y, r) {
+    var lvlMult = 1 + 0.1 * level; //aumentar la velocidad de los asteroides con cada nivel 
     var asteroid = {
       x: x,
       y: y,
-      xv: Math.random() * ASTEROIDS_SPD/ FPS * (Math.random() < 0.5 ? 1 : -1), // velocidad aleatoria
-      yv: Math.random() * ASTEROIDS_SPD/ FPS * (Math.random() < 0.5 ? 1 : -1), // velocidad aleatoria
+      xv: Math.random() * ASTEROIDS_SPD * lvlMult/ FPS * (Math.random() < 0.5 ? 1 : -1), // velocidad aleatoria
+      yv: Math.random() * ASTEROIDS_SPD * lvlMult/ FPS * (Math.random() < 0.5 ? 1 : -1), // velocidad aleatoria
       r: r,
       a: Math.random() * Math.PI * 2, // dirección aleatoria
       vert: Math.floor(Math.random() * (ASTEROIDS_VERT +1) + ASTEROIDS_VERT / 2 ), // número de vértices aleatorio
@@ -213,6 +231,18 @@
       ship.thrust.y = 0;
     }
   }
+}
+
+function newGame(){
+  level = 0;
+  ship = newShip();
+  newLevel();
+}
+
+function newLevel(){
+  text = "Nivel " + (level + 1);
+  textAlfa = 1.0;
+  createAsteroidBelt();
 }
   function newShip() {
     return {
@@ -351,6 +381,14 @@
         ctx.fill();
       }
       
+      if (textAlfa >= 0){
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "rgba(255, 255, 255, " + textAlfa + ")";
+        ctx.font = "small-caps " + TEXT_SIZE + "px dejavu sans mono";
+        ctx.fillText (text, canv.width / 2, canv.height * 0.75);
+        textAlfa -= 1.0 / TEXT_FADE_TIME / FPS;
+      }
       var ax, ay, ar, lx, ly;
       var laserHit = false;
       for (var j = 0; j < asteroids.length; j++) {
