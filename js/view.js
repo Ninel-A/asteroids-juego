@@ -154,3 +154,32 @@ function drawCenterDot(ship) {
   ctx.fillStyle = 'red'
   ctx.fillRect(ship.x - 1, ship.y - 1, 2, 2)
 }
+function drawEnemies(enemies) {
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i]
+
+    // nave enemiga (triángulo invertido en color rojo)
+    ctx.strokeStyle = 'red'
+    ctx.lineWidth = SHIP_SIZE / 20
+    ctx.beginPath()
+    ctx.moveTo(e.x - e.r * Math.cos(e.a), e.y + e.r * Math.sin(e.a))
+    ctx.lineTo(
+      e.x + e.r * ((2 / 3) * Math.cos(e.a) + Math.sin(e.a)),
+      e.y - e.r * ((2 / 3) * Math.sin(e.a) - Math.cos(e.a))
+    )
+    ctx.lineTo(
+      e.x + e.r * ((2 / 3) * Math.cos(e.a) - Math.sin(e.a)),
+      e.y - e.r * ((2 / 3) * Math.sin(e.a) + Math.cos(e.a))
+    )
+    ctx.closePath()
+    ctx.stroke()
+
+    // lasers enemigo
+    ctx.fillStyle = 'red'
+    for (var j = 0; j < e.lasers.length; j++) {
+      ctx.beginPath()
+      ctx.arc(e.lasers[j].x, e.lasers[j].y, SHIP_SIZE / 15, 0, Math.PI * 2, false)
+      ctx.fill()
+    }
+  }
+}

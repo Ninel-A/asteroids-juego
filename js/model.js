@@ -22,7 +22,12 @@ const TEXT_FADE_TIME = 2
 const TEXT_SIZE = 40
 const SAVE_KEY_SCORE = 'asteroidsRecord'
 const SHOW_BOUNDING = false
+const ENEMY_SIZE = 25
+const ENEMY_SPD = 60
+const ENEMY_FIRE_RATE = 120
+const ENEMY_LASER_SPD = 300
 
+var enemies = []
 var level, asteroids, ship, score, text, textAlfa
 var lives = 3
 var gameRunning = false
@@ -31,6 +36,7 @@ function newGame() {
   level = 0
   score = 0
   lives = 3
+  enemies = []
   ship = newShip()
   if (localStorage.getItem(SAVE_KEY_SCORE) === null) {
     localStorage.setItem(SAVE_KEY_SCORE, 0)
@@ -42,6 +48,7 @@ function newLevel() {
   text = 'Nivel ' + (level + 1)
   textAlfa = 1.0
   createAsteroidBelt()
+  createEnemies()
 }
 
 function newShip() {
@@ -145,4 +152,51 @@ function shootLaser() {
 
 function distanceBetweenPoints(x1, y1, x2, y2) {
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+}
+
+function createEnemies() {
+  enemies = []
+  if (level < 2) return // solo desde nivel 3 (level empieza en 0)
+  var count = Math.floor(level / 2) // más enemigos con cada nivel
+  for (var i = 0; i < count; i++) {
+    enemies.push(newEnemy())
+  }
+}
+
+function newEnemy() {
+  // aparecer en borde aleatorio de la pantalla
+  var edge = Math.floor(Math.random() * 4)
+  var x, y
+  if (edge == 0) {
+    x = 0
+    y = Math.random() * canv.height
+  } else if (edge == 1) {
+    x = canv.width
+    y = Math.random() * canv.height
+  } else if (edge == 2) {
+    x = Math.random() * canv.width
+    y = 0
+  } else {
+    x = Math.random() * canv.width
+    y = canv.height
+  }
+
+  return {
+    x: x,
+    y: y,
+    r: ENEMY_SIZE / 2,
+    a: Math.random() * Math.PI * 2,
+    fireTimer: Math.floor(Math.random() * ENEMY_FIRE_RATE),
+    lasers: []
+  }
+}
+
+function enemyShootAt(enemy) {
+  var angle = Math.atan2(ship.y - enemy.y, ship.x - enemy.x)
+  enemy.lasers.push({
+    x: enemy.x,
+    y: enemy.y,
+    xv: (ENEMY_LASER_SPD * Math.cos(angle)) / FPS,
+    yv: (ENEMY_LASER_SPD * Math.sin(angle)) / FPS
+  })
 }

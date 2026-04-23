@@ -25,18 +25,22 @@ function keyDown(ev) {
     case 32:
       shootLaser()
       break
-    case 37: case 65: 
+    case 37:
+    case 65:
       ship.rot = ((-TURN_SPEED / 180) * Math.PI) / FPS
       break
-    case 38: case 87:
+    case 38:
+    case 87:
       ship.thrusting = true
       break
-    case 39: case 68:
+    case 39:
+    case 68:
       ship.rot = ((+TURN_SPEED / 180) * Math.PI) / FPS
       break
-    case 40: case 83: 
-      ship.thrustingBack = true; 
-      break; // abajo / S
+    case 40:
+    case 83:
+      ship.thrustingBack = true
+      break // abajo / S
   }
 }
 
@@ -45,18 +49,22 @@ function keyUp(ev) {
     case 32:
       ship.canShoot = true
       break
-    case 37: case 65:
+    case 37:
+    case 65:
       ship.rot = 0
       break
-    case 38: case 87:
+    case 38:
+    case 87:
       ship.thrusting = false
       break
-    case 39: case 68:   
+    case 39:
+    case 68:
       ship.rot = 0
       break
-    case 40: case 83: 
-      ship.thrustingBack = false; 
-      break; // abajo / S
+    case 40:
+    case 83:
+      ship.thrustingBack = false
+      break // abajo / S
   }
 }
 
@@ -70,14 +78,14 @@ function update() {
 
   // -- MODEL: física --
   if (ship.thrusting) {
-    ship.thrust.x += SHIP_THRUST * Math.cos(ship.a) / FPS;
-    ship.thrust.y -= SHIP_THRUST * Math.sin(ship.a) / FPS;
+    ship.thrust.x += (SHIP_THRUST * Math.cos(ship.a)) / FPS
+    ship.thrust.y -= (SHIP_THRUST * Math.sin(ship.a)) / FPS
   } else if (ship.thrustingBack) {
-    ship.thrust.x -= SHIP_THRUST * Math.cos(ship.a) / FPS;
-    ship.thrust.y += SHIP_THRUST * Math.sin(ship.a) / FPS;
+    ship.thrust.x -= (SHIP_THRUST * Math.cos(ship.a)) / FPS
+    ship.thrust.y += (SHIP_THRUST * Math.sin(ship.a)) / FPS
   } else {
-    ship.thrust.x -= FRICTION * ship.thrust.x / FPS;
-    ship.thrust.y -= FRICTION * ship.thrust.y / FPS;
+    ship.thrust.x -= (FRICTION * ship.thrust.x) / FPS
+    ship.thrust.y -= (FRICTION * ship.thrust.y) / FPS
   }
 
   // -- VIEW: dibujar --
@@ -85,6 +93,7 @@ function update() {
   drawShip(ship, blinkOn, exploding)
   drawLasers(ship)
   drawAsteroids(asteroids)
+  drawEnemies(enemies)
   drawTexts(text, textAlfa)
   drawCenterDot(ship)
 
@@ -167,6 +176,71 @@ function update() {
   if (ship.y < 0 - ship.r) ship.y = canv.height + ship.r
   else if (ship.y > canv.height + ship.r) ship.y = 0 - ship.r
 
+  // enemigos
+  if (!exploding) {
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i]
+
+      // apuntar hacia la nave
+      e.a = Math.atan2(ship.y - e.y, ship.x - e.x)
+
+      // mover hacia la nave
+      e.x += (ENEMY_SPD * Math.cos(e.a)) / FPS
+      e.y += (ENEMY_SPD * Math.sin(e.a)) / FPS
+
+      // disparar al jugador
+      e.fireTimer++
+      if (e.fireTimer >= ENEMY_FIRE_RATE) {
+        enemyShootAt(e)
+        e.fireTimer = 0
+      }
+
+      for (var j = 0; j < e.lasers.length; j++) {
+        e.lasers[j].x += e.lasers[j].xv
+        e.lasers[j].y += e.lasers[j].yv
+
+        if (
+          ship.blinkNum == 0 &&
+          distanceBetweenPoints(ship.x, ship.y, e.lasers[j].x, e.lasers[j].y) < ship.r
+        ) {
+          explodeShip()
+          e.lasers.splice(j, 1)
+          j--
+          continue
+        }
+
+        if (
+          e.lasers[j].x < 0 ||
+          e.lasers[j].x > canv.width ||
+          e.lasers[j].y < 0 ||
+          e.lasers[j].y > canv.height
+        ) {
+          e.lasers.splice(j, 1)
+          j--
+        }
+      }
+
+      for (var k = 0; k < ship.lasers.length; k++) {
+        if (
+          ship.lasers[k].explodeTime == 0 &&
+          distanceBetweenPoints(e.x, e.y, ship.lasers[k].x, ship.lasers[k].y) < e.r
+        ) {
+          enemies.splice(i, 1)
+          ship.lasers.splice(k, 1)
+          score += 150
+          document.getElementById('score').textContent = 'PUNTOS: ' + score
+          i--
+          break
+        }
+      }
+
+      if (distanceBetweenPoints(ship.x, ship.y, e.x, e.y) < ship.r + e.r) {
+        explodeShip()
+        enemies.splice(i, 1)
+        i--
+      }
+    }
+  }
   // -- MODEL: colisiones nave-asteroide --
   if (!exploding && ship.blinkNum == 0) {
     for (var i = 0; i < asteroids.length; i++) {
